@@ -70,19 +70,33 @@ def ListChannels(title, category, genre, filter ='7', type = 'a'):
   url = URL_BASE_TITLES + url_params
   page = HTML.ElementFromURL(url)
   
-  for item in page.xpath("//ul[@class='showsDetailed']/li"):
-    item_title = ''.join(item.xpath(".//div[@class='title']//text()")).strip()
-    thumb = item.xpath(".//img")[0].get('src')
+  page_index = 0
+  while(True):
+    page = HTML.ElementFromURL(url + '&&usePageCookie=false&p=' + str(page_index))
+  
+    for item in page.xpath("//ul[@class='showsDetailed']/li"):
+      item_title = ''.join(item.xpath(".//div[@class='title']//text()")).strip()
+      thumb = item.xpath(".//img")[0].get('src')
 
-    link_details = item.xpath(".//a")[0].get('onclick')
-    link_details = link_details[link_details.find('('):link_details.rfind(')')].split(',')
-    channel_id = link_details[1].strip()
-    playlist_id = link_details[2].strip()
-    movie_id = link_details[4].strip()
+      link_details = item.xpath(".//a")[0].get('onclick')
+      link_details = link_details[link_details.find('('):link_details.rfind(')')].split(',')
+      channel_id = link_details[1].strip()
+      playlist_id = link_details[2].strip()
+      movie_id = link_details[4].strip()
 
-    channel_url = URL_CHANNEL_DETAILS % (channel_id, playlist_id, movie_id)
+      channel_url = URL_CHANNEL_DETAILS % (channel_id, playlist_id, movie_id)
 
-    oc.add(DirectoryObject(key = Callback(ListTitles, title = item_title, channel_url = channel_url), title = item_title, thumb = thumb))
+      oc.add(DirectoryObject(key = Callback(ListTitles, title = item_title, channel_url = channel_url), title = item_title, thumb = thumb))
+
+    page_index = page_index + 1
+    page_index_text = page.xpath("//div[@id='pagerBottom']/span[@class='text']/text()")
+    if len(page_index_text) == 0:
+      break
+    
+    page_index_text = page_index_text[0]
+    max_page = int(re.match("Page [0-9]+ of (?P<max>[0-9]+)", page_index_text).groupdict()['max'])
+    if page_index == max_page:
+      break
 
   if len(oc) == 0:
     return MessageContainer("Error", "No titles were found!")
@@ -93,7 +107,6 @@ def ListChannels(title, category, genre, filter ='7', type = 'a'):
 
 def ListTitles(title, channel_url):
   oc = ObjectContainer(title2 = title, view_group = 'InfoList')
-
 
   page_index = 0
   while(True):
