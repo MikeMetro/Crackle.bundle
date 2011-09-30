@@ -143,7 +143,7 @@ def ListTitles(title, channel_url):
       summary = "%s\n\n%s" % (summary_specific, summary_basic)
       
       oc.add(VideoClipObject(
-        url = item_url,
+        rating_key = item_url,
         title = item_title,
         summary = summary,
         thumb = thumb,
