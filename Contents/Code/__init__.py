@@ -143,29 +143,12 @@ def ListTitles(title, channel_url):
       summary = "%s\n\n%s" % (summary_specific, summary_basic)
       
       oc.add(VideoClipObject(
-        url = item_url,
+        url = video_url,
         title = item_title,
         summary = summary,
         thumb = thumb,
         directors = directors,
-        content_rating = content_rating,
-        items = [
-          MediaObject(
-            video_codec = VideoCodec.H264,
-            audio_codec = AudioCodec.AAC,
-            video_resolution = 480,
-            protocols = [Protocol.HTTPMP4Video],
-            parts = [PartObject(key = video_url % "480p")]
-          ),
-          MediaObject(
-            video_codec = VideoCodec.H264,
-            audio_codec = AudioCodec.AAC,
-            video_resolution = 360,
-            protocols = [Protocol.HTTPMP4Video],
-            parts = [PartObject(key = video_url % "360p")]
-          )
-        ]
-      ))
+        content_rating = content_rating))
 
     page_index = page_index + 1
     next_page = page.xpath("//div[contains(@class, 'right-next-button')]")
