@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
 	<key>CFBundleDevelopmentRegion</key>
@@ -18,8 +20,6 @@
 	<array>
 		<string>AAC</string>
 	</array>
-	<key>PlexClientPlatforms</key>
-	<string>MacOSX,iOS,Android,LGTV</string>
 	<key>PlexFrameworkVersion</key>
 	<string>2</string>
 	<key>PlexMediaContainer</key>
@@ -37,9 +37,14 @@
 		<key>Crackle</key>
 		<dict>
 			<key>URLPattern</key>
-			<string>http://cdn1.crackle.com/.+</string>
+			<string>http://(www\.)?crackle.com/.+/[0-9]+</string>
 			<key>LinkedPlugin</key>
 			<string>com.plexapp.plugins.crackle</string>
+            <key>TestURLs</key>
+            <array>
+                <string>http://www.crackle.com/c/Android_Apocalypse/Android_Apocalypse/2485580</string>
+                <string>http://www.crackle.com/c/Astroboy/Power_Up/2413753</string>
+            </array>
 		</dict>
     </dict>
   </dict>
