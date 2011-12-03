@@ -79,7 +79,7 @@ def MediaObjectsForURL(url):
             video_resolution = 480,
             optimized_for_streaming = True,
             audio_channels = 2,
-            protocols = [Protocol.HTTPMP4Video],
+            protocol = Protocol.HTTPMP4Video,
             parts = [PartObject(key=Callback(PlayVideo, url = url, res = "480p"))]
         ),
         MediaObject(
@@ -88,7 +88,7 @@ def MediaObjectsForURL(url):
             video_resolution = 360,
             optimized_for_streaming = True,
             audio_channels = 2,
-            protocols = [Protocol.HTTPMP4Video],
+            protocol = Protocol.HTTPMP4Video,
             parts = [PartObject(key=Callback(PlayVideo, url = url, res = "360p"))]
         )
     ]
