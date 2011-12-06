@@ -74,6 +74,7 @@ def MetadataObjectForURL(url):
 def MediaObjectsForURL(url):
     return [
         MediaObject(
+            container = Container.MP4,
             video_codec = VideoCodec.H264,
             audio_codec = AudioCodec.AAC,
             video_resolution = 480,
@@ -83,6 +84,7 @@ def MediaObjectsForURL(url):
             parts = [PartObject(key=Callback(PlayVideo, url = url, res = "480p"))]
         ),
         MediaObject(
+            container = Container.MP4,
             video_codec = VideoCodec.H264,
             audio_codec = AudioCodec.AAC,
             video_resolution = 360,
@@ -109,10 +111,10 @@ def PlayVideo(url, res):
 ####################################################################################################
 
 def GetVideoID(url):
-  return re.match(".*/(?P<id>[0-9]+)", url).groupdict()['id']
+    return re.match(".*/(?P<id>[0-9]+)", url).groupdict()['id']
 
 ####################################################################################################
 
 def GetGeoCode():
-  location_details = JSON.ObjectFromURL(URL_GEO)
-  return location_details['CountryCode']
+    location_details = JSON.ObjectFromURL(URL_GEO)
+    return location_details['CountryCode']

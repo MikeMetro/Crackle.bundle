@@ -65,7 +65,10 @@ def MainMenu():
   oc.add(DirectoryObject(key = Callback(Genres, title = 'Movies', type = TYPE_MOVIES, location = location), title = 'Movies'))
   oc.add(DirectoryObject(key = Callback(Genres, title = 'Television', type = TYPE_TELEVISION, location = location), title = 'Television'))
   oc.add(DirectoryObject(key = Callback(Genres, title = 'Original', type = TYPE_ORIGINALS, location = location), title = 'Original'))
-  oc.add(DirectoryObject(key = Callback(Genres, title = 'Collections', type = TYPE_COLLECTIONS, location = location), title = 'Collections'))
+  
+  # This is currently disabled as it appears that they're still working on it. I originally didn't get any titles, now I get titles
+  # which have no associated information.
+  # oc.add(DirectoryObject(key = Callback(Genres, title = 'Collections', type = TYPE_COLLECTIONS, location = location), title = 'Collections'))
 
   return oc
 
