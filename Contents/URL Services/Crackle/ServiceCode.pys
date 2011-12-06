@@ -1,11 +1,70 @@
 import re
 
+URL_GEO = 'http://api.crackle.com/Service.svc/geo/country?format=json'
+URL_MEDIA_DETAILS = 'http://api.crackle.com/Service.svc/details/media/%s/%s?format=json'
+
 ####################################################################################################
 
 def MetadataObjectForURL(url):
     try:
 
-        return VideoClipObject()
+        video_id = GetVideoID(url)
+        geo_code = GetGeoCode()
+        details = JSON.ObjectFromURL(URL_MEDIA_DETAILS % (video_id, geo_code))
+
+        title = details['Title']
+        summary = details['Description']
+        thumb = details['ThumbnailExternal']
+        genres = [ genre.strip() for genre in details['Genre'].split(',') ]
+        content_rating = details['Rating']
+        user_rating = float(details['UserRating']) * 2
+        date = Datetime.ParseDate(details['ReleaseDate'])
+        directors = [ director.strip() for director in details['Directors'].split(',') ]
+        writers = [ writer.strip() for writer in details['Writers'].split(',') ]
+        producers = [ producer.strip() for producer in details['Producers'].split(',') ]
+        tags = [ tag.strip() for tag in details['Tags'].split(',') ]
+        duration = int(details['DurationInSeconds']) * 1000
+        
+        if details['RootChannel'] == 'Movies':
+
+            studio = details['Studio']
+            year = int(details['ReleaseYear'])
+            return MovieObject(
+                title = title,
+                summary = summary,
+                thumb = thumb,
+                genres = genres,
+                rating = user_rating,
+                content_rating = content_rating,
+                duration = duration,
+                originally_available_at = date,
+                year = year,
+                directors = directors,
+                writers = writers,
+                producers = producers,
+                studio = studio,
+                tags = tags)
+
+        elif details['RootChannel'] == 'Television' or details['RootChannel'] == 'Originals':
+
+            show = details['ShowName']
+            season = int(details['Season'])
+            index = int(details['Episode'])
+            return EpisodeObject(
+                show = show,
+                title = title,
+                season = season,
+                index = index,
+                summary = summary,
+                thumb = thumb,
+                rating = user_rating,
+                content_rating = content_rating,
+                duration = duration,
+                originally_available_at = date,
+                directors = directors,
+                writers = writers,
+                producers = producers,
+                tags = tags)
 
     except:
         Log.Exception("An error occurred while attempting to retrieve the required meta data.")
@@ -15,17 +74,47 @@ def MetadataObjectForURL(url):
 def MediaObjectsForURL(url):
     return [
         MediaObject(
+            container = Container.MP4,
             video_codec = VideoCodec.H264,
             audio_codec = AudioCodec.AAC,
             video_resolution = 480,
-            protocols = [Protocol.HTTPMP4Video],
-            parts = [PartObject(key = url % "480p")]
-          ),
+            optimized_for_streaming = True,
+            audio_channels = 2,
+            protocol = Protocol.HTTPMP4Video,
+            parts = [PartObject(key=Callback(PlayVideo, url = url, res = "480p"))]
+        ),
         MediaObject(
+            container = Container.MP4,
             video_codec = VideoCodec.H264,
             audio_codec = AudioCodec.AAC,
             video_resolution = 360,
-            protocols = [Protocol.HTTPMP4Video],
-            parts = [PartObject(key = url % "360p")]
-          )
+            optimized_for_streaming = True,
+            audio_channels = 2,
+            protocol = Protocol.HTTPMP4Video,
+            parts = [PartObject(key=Callback(PlayVideo, url = url, res = "360p"))]
+        )
     ]
+
+####################################################################################################
+
+def PlayVideo(url, res):
+    video_id = GetVideoID(url)
+    geo_code = GetGeoCode()
+    details = JSON.ObjectFromURL(URL_MEDIA_DETAILS % (video_id, geo_code))
+
+    video_url = details['ThumbnailExternal']
+    video_url = video_url.replace('images2.cra', 'images3.cra')
+    video_url = video_url[:video_url.rfind('_') + 1]
+    video_url = video_url + res + '.mp4'
+    return Redirect(video_url)
+
+####################################################################################################
+
+def GetVideoID(url):
+    return re.match(".*/(?P<id>[0-9]+)", url).groupdict()['id']
+
+####################################################################################################
+
+def GetGeoCode():
+    location_details = JSON.ObjectFromURL(URL_GEO)
+    return location_details['CountryCode']

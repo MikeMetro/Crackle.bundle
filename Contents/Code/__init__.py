@@ -5,20 +5,32 @@ TITLE = 'Crackle'
 ART = 'art-default.jpg'
 ICON = 'icon-default.png'
 
-URL_BASE_TITLES = 'http://www.crackle.com/chromewebapp/ShowList.aspx?'
-URL_PARAMS = 'cl=%s&fb=%s'
-URL_PARAMS_INNER = '&o=%s&fa=%s&fs=&fx=&fab=&fg=%s&fry='
-URL_CHANNEL_DETAILS = 'http://www.crackle.com/chromewebapp/WatchShow.aspx?cid=%s&pid=%s&id=%s'
-URL_TITLE_DETAILS = 'http://www.crackle.com/chromewebapp/NowPlaying.aspx?mediaId=%s&id=%s'
-URL_VIDEO_BASE = 'http://cdn1.crackle.com'
+TYPE_MOVIES = 'movies'
+TYPE_TELEVISION = 'television'
+TYPE_ORIGINALS = 'originals'
+TYPE_COLLECTIONS = 'collections'
+
+GENRE_ALL = 'all'
+GENRE_ACTION = 'Action'
+GENRE_COMEDY = 'Comedy'
+GENRE_CRIME = 'Crime'
+GENRE_HORROW = 'Horrow'
+GENRE_SCI_FI = 'Sci-Fi'
+GENRE_THRILLER = 'Thriller'
+
+URL_GEO = 'http://api.crackle.com/Service.svc/geo/country?format=json'
+URL_CATEGORIES = 'http://api.crackle.com/Service.svc/browse/%s/full/%s/alpha/%s?format=json'
+URL_DETAILS = 'http://api.crackle.com/Service.svc/channel/%s/folders/%s?format=json'
+URL_MEDIA_DETAILS = 'http://api.crackle.com/Service.svc/details/media/%s/%s?format=json'
 
 ###################################################################################################
 
 def Start():
-  Plugin.AddPrefixHandler('/video/crackle', MainMenu, TITLE, ICON, ART)
+    
+  # Set the types of view groups
   Plugin.AddViewGroup('List', viewMode = 'List', mediaType = 'items')
   Plugin.AddViewGroup('InfoList', viewMode = 'InfoList', mediaType = 'items')
-
+    
   # Set the default ObjectContainer attributes
   ObjectContainer.title1 = TITLE
   ObjectContainer.view_group = 'List'
@@ -35,69 +47,56 @@ def Start():
 
 ###################################################################################################
 
+@handler('/video/crackle', TITLE)
 def MainMenu():
+    
+  # Determine the location of the client, and the associated API region code
+  location_details = JSON.ObjectFromURL(URL_GEO)
+  if location_details['status']['messageCode'] != '0':
+    return MessageContainer(location_details['status']['message'])
+  location = location_details['CountryCode']
+  
   oc = ObjectContainer()
 
-  oc.add(DirectoryObject(key = Callback(Genres, title = 'Movies', category = '82'), title = 'Movies'))
-  oc.add(DirectoryObject(key = Callback(Genres, title = 'Television', category = '114'), title = 'Television'))
-  oc.add(DirectoryObject(key = Callback(Genres, title = 'Original', category = '46'), title = 'Original'))
-  oc.add(DirectoryObject(key = Callback(Genres, title = 'Collections', category = '586'), title = 'Collections'))
+  oc.add(DirectoryObject(key = Callback(Genres, title = 'Movies', type = TYPE_MOVIES, location = location), title = 'Movies'))
+  oc.add(DirectoryObject(key = Callback(Genres, title = 'Television', type = TYPE_TELEVISION, location = location), title = 'Television'))
+  oc.add(DirectoryObject(key = Callback(Genres, title = 'Original', type = TYPE_ORIGINALS, location = location), title = 'Original'))
+  
+  # This is currently disabled as it appears that they're still working on it. I originally didn't get any titles, now I get titles
+  # which have no associated information.
+  # oc.add(DirectoryObject(key = Callback(Genres, title = 'Collections', type = TYPE_COLLECTIONS, location = location), title = 'Collections'))
 
   return oc
 
 ###################################################################################################
 
-def Genres(title, category):
+def Genres(title, type, location):
   oc = ObjectContainer(title2 = title)
 
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'All Genres', category = category, genre = ''), title = 'All Genres'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Action', category = category, genre = 'action'), title = 'Action'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Comedy', category = category, genre = 'comedy'), title = 'Comedy'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Crime', category = category, genre = 'crime'), title = 'Crime'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Thriller', category = category, genre = 'thriller'), title = 'Thriller'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Horror', category = category, genre = 'horror'), title = 'Horror'))
-  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Sci-Fi', category = category, genre = 'sci-fi'), title = 'Sci-Fi'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'All Genres', type = type, genre = GENRE_ALL, location = location), title = 'All Genres'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Action', type = type, genre = GENRE_ACTION, location = location), title = 'Action'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Comedy', type = type, genre = GENRE_COMEDY, location = location), title = 'Comedy'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Crime', type = type, genre = GENRE_CRIME, location = location), title = 'Crime'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Thriller', type = type, genre = GENRE_THRILLER, location = location), title = 'Thriller'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Horror', type = type, genre = GENRE_HORROW, location = location), title = 'Horror'))
+  oc.add(DirectoryObject(key = Callback(ListChannels, title = 'Sci-Fi', type = type, genre = GENRE_SCI_FI, location = location), title = 'Sci-Fi'))
 
   return oc
 
 ###################################################################################################
 
-def ListChannels(title, category, genre, filter ='7', type = 'a'):
-  oc = ObjectContainer(title2 = title)
+def ListChannels(title, type, genre, location):
+  oc = ObjectContainer(title2 = title, view_group = 'InfoList')
 
-  url_params_inner = URL_PARAMS_INNER % (filter, category, genre)
-  url_params = URL_PARAMS %  (String.Quote(url_params_inner), type)
-  url = URL_BASE_TITLES + url_params
-  page = HTML.ElementFromURL(url)
+  titles = JSON.ObjectFromURL(URL_CATEGORIES % (type, genre, location))
+  for title in titles['Entries']:
+
+    oc.add(DirectoryObject(
+      key = Callback(ListTitles, title = title['Name'], id = title['ID'], location = location), 
+      title = title['Name'],
+      summary = title['Description'],
+      thumb = title['ChannelArtTileLarge']))
   
-  page_index = 0
-  while(True):
-    page = HTML.ElementFromURL(url + '&&usePageCookie=false&p=' + str(page_index))
-  
-    for item in page.xpath("//ul[@class='showsDetailed']/li"):
-      item_title = ''.join(item.xpath(".//div[@class='title']//text()")).strip()
-      thumb = item.xpath(".//img")[0].get('src')
-
-      link_details = item.xpath(".//a")[0].get('onclick')
-      link_details = link_details[link_details.find('('):link_details.rfind(')')].split(',')
-      channel_id = link_details[1].strip()
-      playlist_id = link_details[2].strip()
-      movie_id = link_details[4].strip()
-
-      channel_url = URL_CHANNEL_DETAILS % (channel_id, playlist_id, movie_id)
-
-      oc.add(DirectoryObject(key = Callback(ListTitles, title = item_title, channel_url = channel_url), title = item_title, thumb = thumb))
-
-    page_index = page_index + 1
-    page_index_text = page.xpath("//div[@id='pagerBottom']/span[@class='text']/text()")
-    if len(page_index_text) == 0:
-      break
-    
-    page_index_text = page_index_text[0]
-    max_page = int(re.match("Page [0-9]+ of (?P<max>[0-9]+)", page_index_text).groupdict()['max'])
-    if page_index == max_page:
-      break
-
   if len(oc) == 0:
     return MessageContainer("Error", "No titles were found!")
     
@@ -105,54 +104,65 @@ def ListChannels(title, category, genre, filter ='7', type = 'a'):
 
 ###################################################################################################
 
-def ListTitles(title, channel_url):
+def ListTitles(title, id, location):
   oc = ObjectContainer(title2 = title, view_group = 'InfoList')
-
-  page_index = 0
-  while(True):
-    page = HTML.ElementFromURL(channel_url + '&p=' + str(page_index))
-    for item in page.xpath("//div[@class='episodes']//li"):
-
-      thumb_link = item.xpath(".//img[@id='imgMediaThumbnail']")[0].get('src')
-      video_path = thumb_link[thumb_link.find('.com') + 4: thumb_link.rfind('_') + 1]
-      video_url = URL_VIDEO_BASE + video_path + "%s" + '.mp4'
-
-      item_id_text = item.get('onclick')
-      media_id = re.match(".*\((?P<media_id>[0-9]+),.*", item_id_text).groupdict()['media_id']
-      channel_id = page.xpath("//input[@id='channelId']")[0].get('value')
-      item_url = URL_TITLE_DETAILS % (media_id, channel_id)
-
-      item_page = HTML.ElementFromURL(item_url)
-
-      item_title = ''.join(item_page.xpath(".//h3[@id='mediaTitle']/text()")).strip()
-      thumb = item_page.xpath(".//div[@class='thumbImg']//img")[0].get('src')
-        
-      # [Optional]
-      content_rating = None
-      try: content_rating = item_page.xpath("//b[contains(text(), Rating)]/text()")[0].split(':')[1].strip()
-      except: pass
-
-      # [Optional]
-      directors = []
-      try: directors = item_page.xpath("//h3[contains(text(), 'Director')]/following-sibling::div/text()")[0].split(',')
-      except: pass
-      directors = [ dir.strip for dir in directors ]
-        
-      summary_specific = ''.join(item_page.xpath(".//div[@class='showDetails']//div[@id='mediaDesc']/text()")).strip()
-      summary_basic = ''.join(item_page.xpath(".//div[@class='showDetailsMore']//div[@class='synopsis']/text()")).strip()
-      summary = "%s\n\n%s" % (summary_specific, summary_basic)
       
-      oc.add(VideoClipObject(
-        url = video_url,
-        title = item_title,
-        summary = summary,
-        thumb = thumb,
-        directors = directors,
-        content_rating = content_rating))
+  titles = JSON.ObjectFromURL(URL_DETAILS % (id, location))
+    
+  for playlist in titles['FolderList'][0]['PlaylistList']:
+    for title in playlist['MediaList']:
+      
+      url = title['XItemId']
+      video_title = title['Title']
+      summary = title['Description']
+      thumb = title['ThumbnailExternal']
+      genres = [ genre.strip() for genre in title['Genre'].split(',') ]
+      content_rating = title['Rating']
+      date = Datetime.ParseDate(title['ReleaseDate'])
+        
+      duration_text = title['Duration']
+      duration_dict = re.match("((?P<hours>[0-9]+):)?(?P<mins>[0-9]+):(?P<secs>[0-9]+)", duration_text).groupdict()
 
-    page_index = page_index + 1
-    next_page = page.xpath("//div[contains(@class, 'right-next-button')]")
-    if len(next_page) == 0:
-      break
+      hours = 0
+      if duration_dict['hours'] != None:
+          hours = int(duration_dict['hours'])
+          
+      mins = int(duration_dict['mins'])
+      secs = int(duration_dict['secs'])
+      duration = ((((hours * 60) + mins) * 60) + secs) * 1000
+        
+      if title['RootChannel'] == 'Movies':
+        oc.add(MovieObject(
+          url = url,
+          title = video_title,
+          summary = summary,
+          thumb = thumb,
+          genres = genres,
+          content_rating = content_rating,
+          duration = duration,
+          originally_available_at = date))
 
+      elif title['RootChannel'] == 'Television' or title['RootChannel'] == 'Originals':
+          
+        show = title['ParentChannelName']
+        season = int(title['Season'])
+        index = int(title['Episode'])
+          
+        oc.add(EpisodeObject(
+          url = url,
+          show = show,
+          title = video_title,
+          season = season,
+          index = index,
+          summary = summary,
+          thumb = thumb,
+          content_rating = content_rating,
+          duration = duration,
+          originally_available_at = date))
+      
   return oc
+
+
+
+    
+      
