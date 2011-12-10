@@ -47,7 +47,7 @@ def Start():
 
 ###################################################################################################
 
-@handler('/video/crackle', TITLE)
+@handler('/video/crackle', TITLE, thumb=ICON, art=ART)
 def MainMenu():
     
   # Determine the location of the client, and the associated API region code
