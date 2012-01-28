@@ -109,6 +109,9 @@ def ListTitles(title, id, location):
       
   titles = JSON.ObjectFromURL(URL_DETAILS % (id, location))
     
+  if len(titles['FolderList']) == 0:
+    return MessageContainer("Error", "No titles were found!")
+
   for playlist in titles['FolderList'][0]['PlaylistList']:
     for title in playlist['MediaList']:
       
