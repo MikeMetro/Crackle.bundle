@@ -103,7 +103,7 @@ def PlayVideo(url, res):
     details = JSON.ObjectFromURL(URL_MEDIA_DETAILS % (video_id, geo_code))
 
     video_url = details['ThumbnailExternal']
-    video_url = video_url.replace('images2.cra', 'images3.cra')
+    video_url = re.sub(r'//.*?\.crackle.com/', "//cdn1.crackle.com/", video_url)
     video_url = video_url[:video_url.rfind('_') + 1]
     video_url = video_url + res + '.mp4'
     return Redirect(video_url)
